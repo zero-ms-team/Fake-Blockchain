@@ -17,6 +17,10 @@ func main() {
 		fmt.Printf("Prev. hash: %x\n", b.PrevBlockHash)
 		fmt.Printf("Data: %s\n", b.Data)
 		fmt.Printf("Hash: %x\n", b.Hash)
+
+		pow := NewProofOfWork(b)
+		fmt.Println("pow: ", pow.Validate(b))
+
 		fmt.Println()
 	}
 }

@@ -7,15 +7,10 @@ import (
 )
 
 func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{prevBlockHash, []byte{}, time.Now().Unix(), []byte(data)}
-	block.SetHash()
+	block := &Block{prevBlockHash, []byte{}, time.Now().Unix(), []byte(data), 0}
+	pow := NewProofOfWork(block)
+	block.Nonce, block.Hash = pow.Run()
 
-	type Block struct {
-		PrevBlockHash []byte
-		Hash          []byte
-		Timestamp     int64
-		Data          []byte
-	}
 	return block
 }
 

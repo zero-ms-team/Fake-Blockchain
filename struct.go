@@ -26,4 +26,5 @@ type Block struct {
 	Hash          []byte
 	Timestamp     int64
 	Data          []byte
+	Nonce         int64
 }
