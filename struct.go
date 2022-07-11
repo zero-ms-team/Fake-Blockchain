@@ -1,5 +1,7 @@
 package main
 
+import "github.com/boltdb/bolt"
+
 type TXInput struct {
 	Txid      []byte
 	Vout      int
@@ -18,7 +20,13 @@ type Transaction struct {
 }
 
 type Blockchain struct {
-	blocks []*Block
+	DB *bolt.DB
+	L  []byte
+}
+
+type BlockchainIterator struct {
+	DB   *bolt.DB
+	Hash []byte
 }
 
 type Block struct {
@@ -28,3 +36,5 @@ type Block struct {
 	Data          []byte
 	Nonce         int64
 }
+
+type CLI struct{}
