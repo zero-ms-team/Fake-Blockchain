@@ -1,16 +1,21 @@
 package main
 
-import "github.com/boltdb/bolt"
+import (
+	"crypto/ecdsa"
+
+	"github.com/boltdb/bolt"
+)
 
 type TXInput struct {
 	Txid      []byte
 	Vout      int
-	ScriptSig string
+	Signature []byte
+	PubKey    []byte
 }
 
 type TXOutput struct {
-	Value        uint64
-	ScriptPubKey string
+	Value      uint64
+	PubKeyHash []byte
 }
 
 type Transaction struct {
@@ -38,3 +43,12 @@ type Block struct {
 }
 
 type CLI struct{}
+
+type Wallet struct {
+	PrivateKey *ecdsa.PrivateKey
+	PublicKey  []byte
+}
+
+type KeyStore struct {
+	Wallets map[string]*Wallet
+}

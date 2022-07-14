@@ -1,15 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"log"
 
 	"github.com/boltdb/bolt"
-)
-
-const ( // boltdb info
-	BlocksBucket = "blocks"
-	dbFile       = "chain.DB"
 )
 
 // normal blockchain
@@ -45,6 +43,10 @@ func CreateBlockchain(address string) *Blockchain {
 		return nil
 	})
 
+	if err != nil {
+		log.Panic(err)
+	}
+
 	return &Blockchain{db, l}
 }
 
@@ -71,6 +73,12 @@ func GetBlockchain() *Blockchain {
 }
 
 func (bc *Blockchain) AddBlock(transactions []*Transaction) {
+	for _, tx := range transactions {
+		if isVerified := bc.VerifyTransaction(tx); !isVerified {
+			log.Panic("ERROR: Invalid transaction")
+		}
+	}
+
 	block := NewBlock(transactions, bc.L)
 
 	err := bc.DB.Update(func(tx *bolt.Tx) error {
@@ -110,4 +118,38 @@ func (bc *Blockchain) List() {
 
 		fmt.Println()
 	}
+}
+
+func (bc *Blockchain) FindTransaction(txid []byte) *Transaction {
+	bci := NewBlockchainIterator(bc)
+	for bci.HasNext() {
+		block := bci.Next()
+		for _, tx := range block.Transactions {
+			if bytes.Compare(tx.ID, txid) == 0 {
+				return tx
+			}
+		}
+	}
+
+	return nil
+}
+
+func (bc *Blockchain) SignTransaction(privKey *ecdsa.PrivateKey, tx *Transaction) {
+	prevTXs := make(map[string]*Transaction)
+
+	for _, in := range tx.Vin {
+		prevTXs[hex.EncodeToString(in.Txid)] = bc.FindTransaction(in.Txid)
+	}
+
+	tx.Sign(privKey, prevTXs)
+}
+
+func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
+	prevTXs := make(map[string]*Transaction)
+
+	for _, in := range tx.Vin {
+		prevTXs[hex.EncodeToString(in.Txid)] = bc.FindTransaction(in.Txid)
+	}
+
+	return tx.Verify(prevTXs)
 }

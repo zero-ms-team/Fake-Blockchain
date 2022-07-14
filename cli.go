@@ -33,11 +33,16 @@ func (c *CLI) getBalance(address string) uint64 {
 	return bc.GetBalance(address)
 }
 
+func (c *CLI) newWallet() string {
+	return NewKeyStore().CreateWallet().GetAddress()
+}
+
 func (c *CLI) Run() {
 	newCmd := flag.NewFlagSet("new", flag.ExitOnError)
 	listCmd := flag.NewFlagSet("list", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
+	newWalletCmd := flag.NewFlagSet("newwallet", flag.ExitOnError)
 
 	sendValue := sendCmd.Uint64("value", 0, "")
 	sendFrom := sendCmd.String("from", "", "")
@@ -55,6 +60,8 @@ func (c *CLI) Run() {
 		sendCmd.Parse(os.Args[2:])
 	case "getbalance":
 		getBalanceCmd.Parse(os.Args[2:])
+	case "newwallet":
+		newWalletCmd.Parse(os.Args[2:])
 	}
 
 	if newCmd.Parsed() {
@@ -83,5 +90,9 @@ func (c *CLI) Run() {
 			os.Exit(1)
 		}
 		fmt.Printf("Balance of %s: %d\n", *getBalanceAddress, c.getBalance(*getBalanceAddress))
+	}
+
+	if newWalletCmd.Parsed() {
+		fmt.Printf("Address: %s\n", c.newWallet())
 	}
 }

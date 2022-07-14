@@ -32,5 +32,5 @@ func (i *BlockchainIterator) Next() *Block {
 }
 
 func (i *BlockchainIterator) HasNext() bool {
-	return bytes.Compare(i.Hash, []byte{}) != 0
+	return !bytes.Equal(i.Hash, []byte{})
 }
