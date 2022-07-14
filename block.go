@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func NewBlock(data string, prevBlockHash []byte) *Block {
-	block := &Block{prevBlockHash, []byte{}, time.Now().Unix(), []byte(data), 0}
+func NewBlock(transactions []*Transaction, prevBlockHash []byte) *Block {
+	block := &Block{prevBlockHash, []byte{}, time.Now().Unix(), transactions, 0}
 	pow := NewProofOfWork(block)
 	block.Nonce, block.Hash = pow.Run()
 
@@ -19,7 +19,7 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 func (b *Block) SetHash() {
 	header := bytes.Join([][]byte{
 		b.PrevBlockHash,
-		b.Data,
+		b.HashTransaction(),
 		IntToHex(b.Timestamp),
 	}, []byte{})
 
@@ -52,4 +52,16 @@ func DeserializeBlock(d []byte) *Block {
 	}
 
 	return &block
+}
+
+func (b *Block) HashTransaction() []byte {
+	var txHashes [][]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+
+	txHash := sha256.Sum256(bytes.Join(txHashes, []byte{}))
+
+	return txHash[:]
 }

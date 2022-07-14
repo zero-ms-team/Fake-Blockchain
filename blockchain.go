@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 
@@ -15,50 +14,64 @@ const ( // boltdb info
 
 // normal blockchain
 
-func NewBlockchain() *Blockchain { // Make new blockchain, if exist on db, load it
-	DB, err := bolt.Open(dbFile, 0600, nil)
+func CreateBlockchain(address string) *Blockchain {
+	db, err := bolt.Open(dbFile, 0600, nil)
 	if err != nil {
 		log.Panic(err)
 	}
+
 	var l []byte
 
-	err = DB.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BlocksBucket))
-		if b == nil {
-			b, err = tx.CreateBucket([]byte(BlocksBucket))
-			if err != nil {
-				log.Panic(err)
-			}
-
-			genesis := NewBlock("Genesis Block", []byte{})
-
-			err = b.Put(genesis.Hash, genesis.Serialize())
-
-			if err != nil {
-				log.Panic(err)
-			}
-
-			err = b.Put([]byte("l"), genesis.Hash)
-			if err != nil {
-				log.Panic(err)
-			}
-
-			l = genesis.Hash
-		} else {
-			l = b.Get([]byte("l"))
-		}
+	err = db.Update(func(tx *bolt.Tx) error {
+		b, err := tx.CreateBucket([]byte(BlocksBucket))
 		if err != nil {
 			log.Panic(err)
 		}
 
+		genesis := NewBlock([]*Transaction{NewCoinbaseTX("", address)}, []byte{})
+
+		err = b.Put(genesis.Hash, genesis.Serialize())
+		if err != nil {
+			log.Panic(err)
+		}
+
+		err = b.Put([]byte("l"), genesis.Hash)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		l = genesis.Hash
+
 		return nil
 	})
 
-	return &Blockchain{DB, l}
+	return &Blockchain{db, l}
 }
 
-func (bc *Blockchain) AddBlock(data string) {
-	block := NewBlock(data, bc.L)
+func GetBlockchain() *Blockchain {
+	db, err := bolt.Open(dbFile, 0600, nil)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	var l []byte
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(BlocksBucket))
+
+		l = b.Get([]byte("l"))
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return &Blockchain{db, l}
+}
+
+func (bc *Blockchain) AddBlock(transactions []*Transaction) {
+	block := NewBlock(transactions, bc.L)
 
 	err := bc.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(BlocksBucket))
@@ -90,7 +103,6 @@ func (bc *Blockchain) List() {
 		block := bci.Next()
 
 		fmt.Printf("PrevBlockHash: %x\n", block.PrevBlockHash)
-		fmt.Printf("Data: %s\n", block.Data)
 		fmt.Printf("Hash: %x\n", block.Hash)
 
 		pow := NewProofOfWork(block)
@@ -98,34 +110,4 @@ func (bc *Blockchain) List() {
 
 		fmt.Println()
 	}
-}
-
-// Blockchain block iterator
-
-func NewBlockchainIterator(bc *Blockchain) *BlockchainIterator {
-	return &BlockchainIterator{bc.DB, bc.L}
-}
-
-func (i *BlockchainIterator) Next() *Block {
-	var block *Block
-
-	err := i.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(BlocksBucket))
-
-		encodedBlock := b.Get(i.Hash)
-		block = DeserializeBlock(encodedBlock)
-
-		i.Hash = block.PrevBlockHash
-
-		return nil
-	})
-	if err != nil {
-		log.Panic(err)
-	}
-
-	return block
-}
-
-func (i *BlockchainIterator) HasNext() bool {
-	return bytes.Compare(i.Hash, []byte{}) != 0
 }

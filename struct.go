@@ -9,7 +9,7 @@ type TXInput struct {
 }
 
 type TXOutput struct {
-	Value        int
+	Value        uint64
 	ScriptPubKey string
 }
 
@@ -33,7 +33,7 @@ type Block struct {
 	PrevBlockHash []byte
 	Hash          []byte
 	Timestamp     int64
-	Data          []byte
+	Transactions  []*Transaction
 	Nonce         int64
 }
 

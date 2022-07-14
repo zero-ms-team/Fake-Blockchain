@@ -18,3 +18,6 @@ Fake-Blockchain
 # DataBase file
 *.db
 *.DB
+
+# etc
+oryxBuildBinary
