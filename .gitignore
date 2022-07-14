@@ -18,6 +18,7 @@ Fake-Blockchain
 # DataBase file
 *.db
 *.DB
+wallet.dat
 
 # etc
 oryxBuildBinary
